@@ -1,0 +1,26 @@
+# Unity YAML — текстовый формат, сливаем как текст
+*.unity    merge=unityyamlmerge eol=lf
+*.prefab   merge=unityyamlmerge eol=lf
+*.asset    merge=unityyamlmerge eol=lf
+*.mat      merge=unityyamlmerge eol=lf
+*.meta     merge=unityyamlmerge eol=lf
+*.controller merge=unityyamlmerge eol=lf
+
+# Скрипты
+*.cs       text diff=csharp
+*.shader   text
+*.hlsl     text
+*.cginc    text
+
+# Прочее
+*.md       text
+*.json     text
+*.bat      text eol=crlf
+
+# Бинарные файлы
+*.png      binary
+*.jpg      binary
+*.exe      binary
+*.dll      binary
+*.apk      binary
+*.aab      binary
