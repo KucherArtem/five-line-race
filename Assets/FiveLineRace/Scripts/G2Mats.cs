@@ -15,6 +15,13 @@ namespace FiveLineRace
         {
             get
             {
+                // Материал из Resources гарантирует, что URP Unlit и его варианты
+                // реально попали в билд (его создаёт редакторский билдер).
+                if (unlitShader == null)
+                {
+                    var template = Resources.Load<Material>("TurboUnlit");
+                    if (template != null) unlitShader = template.shader;
+                }
                 if (unlitShader == null) unlitShader = Shader.Find("Universal Render Pipeline/Unlit");
                 if (unlitShader == null) unlitShader = Shader.Find("Unlit/Color");
                 if (unlitShader == null) unlitShader = Shader.Find("Sprites/Default");

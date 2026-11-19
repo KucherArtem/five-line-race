@@ -28,6 +28,7 @@ namespace FiveLineRace
         }
 
         PlayerCar2D car;
+        GameObject carVisual;
         CameraShake2D shake;
         UIManager2D ui;
         Transform worldRoot;
@@ -82,6 +83,10 @@ namespace FiveLineRace
             var visual = G2Visuals.CreatePlayer(carRoot.transform);
             car = carRoot.AddComponent<PlayerCar2D>();
             car.Init(visual.transform);
+
+            // В меню машину не показываем: на экране только трасса и заголовок.
+            carVisual = visual;
+            carVisual.SetActive(false);
 
             ui = UIManager2D.Create();
             ui.SetHud(0, Best, 0, 0f);
@@ -206,6 +211,8 @@ namespace FiveLineRace
             Time.timeScale = 1f;
 
             ClearSpawned();
+
+            if (carVisual != null) carVisual.SetActive(true);
 
             car.ResetToCenter();
             Distance = 0f;

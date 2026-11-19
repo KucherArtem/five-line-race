@@ -15,10 +15,6 @@ namespace FiveLineRace
 
             var body = new Color(1f, 0.33f, 0.12f);
 
-            // Неоновая подсветка под машиной.
-            G2Quad.Create(root.transform, "Underglow", 0f, 0f, 1.75f, 2.95f,
-                new Color(0.1f, 0.75f, 1f), 0.06f);
-
             BuildCar(root.transform, body);
             return root;
         }
