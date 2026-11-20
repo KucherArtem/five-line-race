@@ -14,18 +14,18 @@ namespace FiveLineRace
             var root = new GameObject("World");
             var moving = new List<Transform>();
 
-            // --- Фон, тротуары, дорога ---
+            // --- Фон ---
             G2Quad.Create(root.transform, "Backdrop", 0f, 0f, 70f, 70f, G2.Night, 9f);
 
-            G2Quad.Create(root.transform, "SidewalkL", -5.15f, 0f, 1.3f, 70f, G2.Sidewalk, 5.3f);
-            G2Quad.Create(root.transform, "SidewalkR", 5.15f, 0f, 1.3f, 70f, G2.Sidewalk, 5.3f);
+            // --- Дорога, борта и тротуары ---
+            // Это гладкие ленты: они изгибаются вслед за поворотами трассы.
+            Ribbon2D.Create(root.transform, "Road", -G2.RoadHalfWidth, G2.RoadHalfWidth, G2.Asphalt, 5.1f);
+            Ribbon2D.Create(root.transform, "SidewalkL", -5.85f, -4.45f, G2.Sidewalk, 5.3f);
+            Ribbon2D.Create(root.transform, "SidewalkR", 4.45f, 5.85f, G2.Sidewalk, 5.3f);
 
-            G2Quad.Create(root.transform, "Road", 0f, 0f, G2.RoadHalfWidth * 2f, 70f, G2.Asphalt, 5.1f);
-
-            // Неоновые борта трассы.
             float edgeX = G2.RoadHalfWidth - 0.09f;
-            G2Quad.Create(root.transform, "EdgeCyan", -edgeX, 0f, 0.1f, 70f, G2.Cyan, 4.95f);
-            G2Quad.Create(root.transform, "EdgeMagenta", edgeX, 0f, 0.1f, 70f, G2.Magenta, 4.95f);
+            Ribbon2D.Create(root.transform, "EdgeCyan", -edgeX - 0.1f, -edgeX + 0.1f, G2.Cyan, 4.95f);
+            Ribbon2D.Create(root.transform, "EdgeMagenta", edgeX - 0.1f, edgeX + 0.1f, G2.Magenta, 4.95f);
 
             // --- Прерывистая разметка между полосами (4 разделителя) ---
             for (int divider = 0; divider < G2.LaneCount - 1; divider++)
@@ -113,14 +113,22 @@ namespace FiveLineRace
 
     /// <summary>
     /// Бесконечная прокрутка декораций вниз (на игрока) с зацикливанием.
+    /// Каждый элемент помнит свою базовую X и смещается по кривой трассы.
     /// </summary>
     public class WorldScroller2D : MonoBehaviour
     {
         Transform[] items;
+        float[] baseX;
 
         public void Init(Transform[] items)
         {
             this.items = items;
+            baseX = new float[items.Length];
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                baseX[i] = items[i] != null ? items[i].localPosition.x : 0f;
+            }
         }
 
         void Update()
@@ -129,6 +137,7 @@ namespace FiveLineRace
             if (gm == null || items == null) return;
 
             float dy = gm.ScrollSpeed * Time.deltaTime;
+            float travelled = gm.Distance;
 
             for (int i = 0; i < items.Length; i++)
             {
@@ -138,6 +147,8 @@ namespace FiveLineRace
                 var p = item.position;
                 p.y -= dy;
                 if (p.y < G2.WrapBottom) p.y += G2.WrapLength;
+
+                p.x = G2Path.XAtY(baseX[i], p.y, travelled);
                 item.position = p;
             }
         }

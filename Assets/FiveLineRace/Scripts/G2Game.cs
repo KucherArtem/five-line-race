@@ -39,6 +39,7 @@ namespace FiveLineRace
         float spawnTimer;
         float crashTime;
         float inputUnlockTime;
+        float camX;
 
         /// <summary>
         /// Страховка: если в открытой сцене нет Game2Manager, игра всё равно запустится.
@@ -114,6 +115,10 @@ namespace FiveLineRace
 
             shake = cam.GetComponent<CameraShake2D>();
             if (shake == null) shake = cam.gameObject.AddComponent<CameraShake2D>();
+
+            camX = G2Path.Center(0f);
+            shake.BasePosition = new Vector3(camX, 0f, -10f);
+            cam.transform.position = shake.BasePosition;
         }
 
         void Update()
@@ -162,6 +167,20 @@ namespace FiveLineRace
             {
                 Application.Quit();
             }
+
+            FollowCurve();
+        }
+
+        /// <summary>Камера плавно едет за поворотом трассы, игрок остаётся по центру.</summary>
+        void FollowCurve()
+        {
+            if (shake == null) return;
+
+            float target = G2Path.Center(Distance);
+            float k = 1f - Mathf.Exp(-8f * Mathf.Max(0.0001f, Time.unscaledDeltaTime));
+            camX = Mathf.Lerp(camX, target, k);
+
+            shake.BasePosition = new Vector3(camX, 0f, -10f);
         }
 
         void Crash()
@@ -216,6 +235,8 @@ namespace FiveLineRace
 
             car.ResetToCenter();
             Distance = 0f;
+            camX = G2Path.Center(0f);
+            if (shake != null) shake.BasePosition = new Vector3(camX, 0f, -10f);
             Coins = 0;
             Speed = G2.StartSpeed;
             spawnTimer = 1.1f;
@@ -285,9 +306,13 @@ namespace FiveLineRace
         {
             var go = new GameObject("Obstacle");
             go.transform.SetParent(worldRoot, false);
-            go.transform.position = new Vector3(G2.LaneX(lane), G2.SpawnY + Random.Range(-1.5f, 1.5f), 0f);
+
+            float laneBase = G2.LaneX(lane);
+            float spawnY = G2.SpawnY + Random.Range(-1.5f, 1.5f);
+            go.transform.position = new Vector3(G2Path.XAtY(laneBase, spawnY, Distance), spawnY, 0f);
 
             var mover = go.AddComponent<Mover2D>();
+            mover.baseX = laneBase;
             float roll = Random.value;
 
             if (roll < 0.22f)
@@ -319,16 +344,19 @@ namespace FiveLineRace
 
         void SpawnCoins(int lane)
         {
-            float x = G2.LaneX(lane);
+            float laneBase = G2.LaneX(lane);
 
             for (int i = 0; i < 4; i++)
             {
+                float y = G2.SpawnY + 1.5f + i * 1.6f;
+
                 var go = new GameObject("Coin");
                 go.transform.SetParent(worldRoot, false);
-                go.transform.position = new Vector3(x, G2.SpawnY + 1.5f + i * 1.6f, -0.5f);
+                go.transform.position = new Vector3(G2Path.XAtY(laneBase, y, Distance), y, -0.5f);
 
                 var visual = G2Visuals.CreateCoin(go.transform);
                 var mover = go.AddComponent<Mover2D>();
+                mover.baseX = laneBase;
                 mover.relativeSpeed = 1f;
                 mover.spin = true;
                 mover.visual = visual.transform;

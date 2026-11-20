@@ -118,7 +118,7 @@ namespace FiveLineRace.EditorTools
         {
             PlayerSettings.companyName = "Fallt Games";
             PlayerSettings.productName = "Five Line Race";
-            PlayerSettings.bundleVersion = "0.2.0";
+            PlayerSettings.bundleVersion = "0.3.0";
             PlayerSettings.colorSpace = ColorSpace.Linear;
 
             // Портретная ориентация.
@@ -141,7 +141,7 @@ namespace FiveLineRace.EditorTools
             // Android: IL2CPP + ARM64.
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
-            PlayerSettings.Android.bundleVersionCode = 2;
+            PlayerSettings.Android.bundleVersionCode = 3;
 
             EditorUserBuildSettings.buildAppBundle = false;
         }

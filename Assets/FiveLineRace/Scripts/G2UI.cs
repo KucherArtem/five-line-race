@@ -93,7 +93,7 @@ namespace FiveLineRace
             MakeText(menu, "Controls", "WINDOWS:  ←   →   ИЛИ   A / D", 30, FaintText, center, center,
                 new Vector2(0f, -520f), new Vector2(1000f, 50f));
 
-            MakeText(menu, "Version", "ПРОТОТИП · 5 ПОЛОС · 0.2", 24, new Color(0.7f, 0.76f, 0.9f, 0.3f), center, center,
+            MakeText(menu, "Version", "ПРОТОТИП · 5 ПОЛОС · 0.3", 24, new Color(0.7f, 0.76f, 0.9f, 0.3f), center, center,
                 new Vector2(0f, -700f), new Vector2(600f, 40f));
 
             // ---------- Экран аварии ----------

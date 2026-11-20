@@ -11,7 +11,7 @@ namespace FiveLineRace
         public int Lane { get; private set; }
 
         Transform visual;
-        float prevX;
+        float laneX;
         bool crashed;
 
         public void Init(Transform carVisual)
@@ -25,9 +25,9 @@ namespace FiveLineRace
             StopAllCoroutines();
             crashed = false;
             Lane = (G2.LaneCount - 1) / 2;
-            prevX = G2.LaneX(Lane);
+            laneX = G2.LaneX(Lane);
 
-            transform.position = new Vector3(prevX, G2.PlayerY, -1f);
+            transform.position = new Vector3(laneX + G2Path.Center(0f), G2.PlayerY, -1f);
             transform.rotation = Quaternion.identity;
 
             if (visual != null)
@@ -52,12 +52,15 @@ namespace FiveLineRace
                 else if (swipe > 0 && Lane < G2.LaneCount - 1) Lane++;
             }
 
-            float targetX = G2.LaneX(Lane);
-            float x = Mathf.MoveTowards(transform.position.x, targetX, 9.5f * Time.deltaTime);
-            float velocity = Time.deltaTime > 0f ? (x - prevX) / Time.deltaTime : 0f;
-            prevX = x;
+            // Перестроение считаем в координатах полосы, а поворот трассы
+            // добавляем отдельно — иначе крен срабатывал бы на каждом повороте.
+            float targetLaneX = G2.LaneX(Lane);
+            float nextLaneX = Mathf.MoveTowards(laneX, targetLaneX, 9.5f * Time.deltaTime);
+            float velocity = Time.deltaTime > 0f ? (nextLaneX - laneX) / Time.deltaTime : 0f;
+            laneX = nextLaneX;
 
-            transform.position = new Vector3(x, G2.PlayerY, -1f);
+            transform.position = new Vector3(
+                laneX + G2Path.Center(gm.Distance), G2.PlayerY, -1f);
 
             if (visual != null && !crashed)
             {

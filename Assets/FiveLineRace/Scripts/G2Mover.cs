@@ -11,6 +11,9 @@ namespace FiveLineRace
         public float relativeSpeed = 1f;
         public bool spin;
 
+        // Базовая X полосы: мировая X зависит от поворота трассы.
+        public float baseX;
+
         // Полуразмеры для проверки столкновения.
         public float halfX = 0.6f;
         public float halfY = 1.15f;
@@ -24,7 +27,10 @@ namespace FiveLineRace
             if (gm == null) return;
 
             float dy = gm.ScrollSpeed * relativeSpeed * Time.deltaTime;
-            transform.position += Vector3.down * dy;
+            var p = transform.position;
+            p.y -= dy;
+            p.x = G2Path.XAtY(baseX, p.y, gm.Distance);
+            transform.position = p;
 
             if (spin && visual != null)
             {

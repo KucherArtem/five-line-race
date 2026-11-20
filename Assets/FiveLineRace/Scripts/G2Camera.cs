@@ -8,19 +8,20 @@ namespace FiveLineRace
     [RequireComponent(typeof(Camera))]
     public class CameraShake2D : MonoBehaviour
     {
-        Vector3 basePosition;
+        /// <summary>Позиция камеры без тряски; её обновляет Game2Manager (следит за поворотом).</summary>
+        public Vector3 BasePosition { get; set; }
+
         float remaining;
         float duration;
         float strength;
 
         void Awake()
         {
-            basePosition = transform.position;
+            BasePosition = transform.position;
         }
 
         public void Shake(float time, float amount)
         {
-            basePosition = transform.position - (Vector3)Offset;
             duration = Mathf.Max(0.01f, time);
             remaining = duration;
             strength = amount;
@@ -33,15 +34,15 @@ namespace FiveLineRace
             if (remaining <= 0f)
             {
                 Offset = Vector2.zero;
-                transform.position = basePosition;
-                return;
+            }
+            else
+            {
+                remaining -= Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(remaining / duration);
+                Offset = Random.insideUnitCircle * (strength * k);
             }
 
-            remaining -= Time.unscaledDeltaTime;
-            float k = Mathf.Clamp01(remaining / duration);
-            Offset = Random.insideUnitCircle * (strength * k);
-
-            transform.position = basePosition + new Vector3(Offset.x, Offset.y, 0f);
+            transform.position = BasePosition + new Vector3(Offset.x, Offset.y, 0f);
         }
     }
 }

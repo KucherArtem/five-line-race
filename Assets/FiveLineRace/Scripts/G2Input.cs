@@ -22,7 +22,11 @@ namespace FiveLineRace
         /// <summary>Подтверждение действия (тап/пробел/Enter/R).</summary>
         public static bool Confirm
         {
-            get { return Pressed || KeyDown(KeyCode.Space) || KeyDown(KeyCode.Return) || KeyDown(KeyCode.R); }
+            get
+            {
+                return (Pressed && armed)
+                    || KeyDown(KeyCode.Space) || KeyDown(KeyCode.Return) || KeyDown(KeyCode.R);
+            }
         }
 
         public static bool EscPressed
@@ -33,6 +37,7 @@ namespace FiveLineRace
         static Vector2 pressPos;
         static Vector2 lastPos;
         static bool tracking;
+        static bool armed;
         static int lastTickFrame = -1;
 
         static bool KeyDown(KeyCode key)
@@ -121,6 +126,11 @@ namespace FiveLineRace
             Pressed = down;
             Released = up;
             Held = held;
+
+            // Первый тап засчитываем только после кадра без нажатия:
+            // иначе нажатие, «застрявшее» на старте приложения, сразу запускает заезд.
+            if (!held) armed = true;
+            if (down && !armed) Pressed = false;
 
             if (down)
             {
