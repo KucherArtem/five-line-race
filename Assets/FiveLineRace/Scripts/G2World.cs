@@ -18,14 +18,18 @@ namespace FiveLineRace
             G2Quad.Create(root.transform, "Backdrop", 0f, 0f, 70f, 70f, G2.Night, 9f);
 
             // --- Дорога, борта и тротуары ---
-            // Это гладкие ленты: они изгибаются вслед за поворотами трассы.
-            Ribbon2D.Create(root.transform, "Road", -G2.RoadHalfWidth, G2.RoadHalfWidth, G2.Asphalt, 5.1f);
-            Ribbon2D.Create(root.transform, "SidewalkL", -5.85f, -4.45f, G2.Sidewalk, 5.3f);
-            Ribbon2D.Create(root.transform, "SidewalkR", 4.45f, 5.85f, G2.Sidewalk, 5.3f);
+            // Это гладкие ленты: они изгибаются вслед за поворотами трассы
+            // и раздвигаются, когда дорога становится шире.
+            float hw = G2.RoadHalfWidth;
+            float walk = hw + 0.05f;
 
-            float edgeX = G2.RoadHalfWidth - 0.09f;
-            Ribbon2D.Create(root.transform, "EdgeCyan", -edgeX - 0.1f, -edgeX + 0.1f, G2.Cyan, 4.95f);
-            Ribbon2D.Create(root.transform, "EdgeMagenta", edgeX - 0.1f, edgeX + 0.1f, G2.Magenta, 4.95f);
+            Ribbon2D.Create(root.transform, "Road", -hw, hw, RibbonSide.Both, G2.Asphalt, 5.1f);
+            Ribbon2D.Create(root.transform, "SidewalkL", -walk - 1.4f, -walk, RibbonSide.Left, G2.Sidewalk, 5.3f);
+            Ribbon2D.Create(root.transform, "SidewalkR", walk, walk + 1.4f, RibbonSide.Right, G2.Sidewalk, 5.3f);
+
+            float edgeX = hw - 0.09f;
+            Ribbon2D.Create(root.transform, "EdgeCyan", -edgeX - 0.1f, -edgeX + 0.1f, RibbonSide.Left, G2.Cyan, 4.95f);
+            Ribbon2D.Create(root.transform, "EdgeMagenta", edgeX - 0.1f, edgeX + 0.1f, RibbonSide.Right, G2.Magenta, 4.95f);
 
             // --- Прерывистая разметка между полосами (4 разделителя) ---
             for (int divider = 0; divider < G2.LaneCount - 1; divider++)
@@ -113,21 +117,28 @@ namespace FiveLineRace
 
     /// <summary>
     /// Бесконечная прокрутка декораций вниз (на игрока) с зацикливанием.
-    /// Каждый элемент помнит свою базовую X и смещается по кривой трассы.
+    /// Каждый элемент помнит свою базовую X и смещается по кривой трассы;
+    /// всё, что стоит за обочиной, дополнительно отъезжает при расширении дороги.
     /// </summary>
     public class WorldScroller2D : MonoBehaviour
     {
+        /// <summary>Всё, что левее/правее этой координаты, считаем придорожным.</summary>
+        const float RoadsideX = 4.5f;
+
         Transform[] items;
         float[] baseX;
+        int[] sides;
 
         public void Init(Transform[] items)
         {
             this.items = items;
             baseX = new float[items.Length];
+            sides = new int[items.Length];
 
             for (int i = 0; i < items.Length; i++)
             {
                 baseX[i] = items[i] != null ? items[i].localPosition.x : 0f;
+                sides[i] = baseX[i] > RoadsideX ? 1 : (baseX[i] < -RoadsideX ? -1 : 0);
             }
         }
 
@@ -148,7 +159,9 @@ namespace FiveLineRace
                 p.y -= dy;
                 if (p.y < G2.WrapBottom) p.y += G2.WrapLength;
 
-                p.x = G2Path.XAtY(baseX[i], p.y, travelled);
+                p.x = baseX[i]
+                    + G2Path.OffsetAtY(p.y, travelled)
+                    + sides[i] * G2Path.ExtraAtY(p.y, travelled);
                 item.position = p;
             }
         }

@@ -116,7 +116,7 @@ namespace FiveLineRace
             shake = cam.GetComponent<CameraShake2D>();
             if (shake == null) shake = cam.gameObject.AddComponent<CameraShake2D>();
 
-            camX = G2Path.Center(0f);
+            camX = CameraTarget(0f);
             shake.BasePosition = new Vector3(camX, 0f, -10f);
             cam.transform.position = shake.BasePosition;
         }
@@ -171,13 +171,22 @@ namespace FiveLineRace
             FollowCurve();
         }
 
-        /// <summary>Камера плавно едет за поворотом трассы, игрок остаётся по центру.</summary>
+        // Камера смотрит чуть вперёд по трассе: в резком повороте машина
+        // уходит к внутренней стороне, а дорога не «улетает» из кадра.
+        const float CameraLookAhead = 4f;
+
+        static float CameraTarget(float distance)
+        {
+            return G2Path.Center(distance + CameraLookAhead);
+        }
+
+        /// <summary>Камера плавно едет за поворотом трассы.</summary>
         void FollowCurve()
         {
             if (shake == null) return;
 
-            float target = G2Path.Center(Distance);
-            float k = 1f - Mathf.Exp(-8f * Mathf.Max(0.0001f, Time.unscaledDeltaTime));
+            float target = CameraTarget(Distance);
+            float k = 1f - Mathf.Exp(-12f * Mathf.Max(0.0001f, Time.unscaledDeltaTime));
             camX = Mathf.Lerp(camX, target, k);
 
             shake.BasePosition = new Vector3(camX, 0f, -10f);
@@ -235,7 +244,7 @@ namespace FiveLineRace
 
             car.ResetToCenter();
             Distance = 0f;
-            camX = G2Path.Center(0f);
+            camX = CameraTarget(0f);
             if (shake != null) shake.BasePosition = new Vector3(camX, 0f, -10f);
             Coins = 0;
             Speed = G2.StartSpeed;

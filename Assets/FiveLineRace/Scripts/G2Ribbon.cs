@@ -6,30 +6,40 @@ namespace FiveLineRace
     /// Гладкая лента вдоль оси трассы: асфальт, неоновые борта, тротуары.
     /// Меш перестраивается каждый кадр и повторяет повороты дороги.
     /// </summary>
+    public enum RibbonSide
+    {
+        None,
+        Left,
+        Right,
+        Both
+    }
+
     public class Ribbon2D : MonoBehaviour
     {
         float left;
         float right;
+        RibbonSide side;
         int segments;
         Mesh mesh;
         Vector3[] vertices;
 
         public static Ribbon2D Create(Transform parent, string name, float left, float right,
-            Color color, float z)
+            RibbonSide side, Color color, float z)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
             go.transform.localPosition = new Vector3(0f, 0f, z);
 
             var ribbon = go.AddComponent<Ribbon2D>();
-            ribbon.Init(left, right, color);
+            ribbon.Init(left, right, side, color);
             return ribbon;
         }
 
-        void Init(float leftEdge, float rightEdge, Color color)
+        void Init(float leftEdge, float rightEdge, RibbonSide ribbonSide, Color color)
         {
             left = leftEdge;
             right = rightEdge;
+            side = ribbonSide;
             segments = 96;
 
             vertices = new Vector3[(segments + 1) * 2];
@@ -80,9 +90,30 @@ namespace FiveLineRace
             {
                 float y = bottom + i * step;
                 float shift = G2Path.OffsetAtY(y, travelled);
+                float extra = G2Path.ExtraAtY(y, travelled);
 
-                vertices[i * 2] = new Vector3(left + shift, y, 0f);
-                vertices[i * 2 + 1] = new Vector3(right + shift, y, 0f);
+                float lo = left + shift;
+                float hi = right + shift;
+
+                // Дорога расширяется в обе стороны, борта и тротуары — вслед за своей обочиной.
+                if (side == RibbonSide.Both)
+                {
+                    lo -= extra;
+                    hi += extra;
+                }
+                else if (side == RibbonSide.Left)
+                {
+                    lo -= extra;
+                    hi -= extra;
+                }
+                else if (side == RibbonSide.Right)
+                {
+                    lo += extra;
+                    hi += extra;
+                }
+
+                vertices[i * 2] = new Vector3(lo, y, 0f);
+                vertices[i * 2 + 1] = new Vector3(hi, y, 0f);
             }
 
             mesh.vertices = vertices;

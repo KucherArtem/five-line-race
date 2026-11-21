@@ -28,11 +28,17 @@ namespace FiveLineRace
         public const float MenuSpeed = 11f;
 
         // --- Повороты трассы ---
-        // Две синусоиды разной длины дают чередующиеся плавные повороты.
-        public const float CurveAmp1 = 2.8f;
-        public const float CurveFreq1 = 0.030f;
-        public const float CurveAmp2 = 1.6f;
-        public const float CurveFreq2 = 0.011f;
+        // Две синусоиды разной длины дают чередующиеся резкие повороты.
+        public const float CurveAmp1 = 3.2f;
+        public const float CurveFreq1 = 0.045f;
+        public const float CurveAmp2 = 1.9f;
+        public const float CurveFreq2 = 0.019f;
+
+        // --- Сужение и расширение дороги ---
+        // Дополнительная полуширина гуляет от -WidthNarrow до +WidthWiden.
+        public const float WidthFreq = 0.012f;
+        public const float WidthNarrow = 0.30f;
+        public const float WidthWiden = 1.10f;
 
         // --- Столкновения (полуразмеры коробки игрока) ---
         public const float PlayerHalfX = 0.52f;
