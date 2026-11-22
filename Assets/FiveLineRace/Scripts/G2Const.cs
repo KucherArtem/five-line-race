@@ -40,6 +40,19 @@ namespace FiveLineRace
         public const float WidthNarrow = 0.30f;
         public const float WidthWiden = 1.10f;
 
+        // --- Люки на дороге ---
+        // Красный ускоряет, зелёный замедляет; множитель плавно возвращается к 1.
+        public const float ManholeSpeedStep = 0.05f;
+        public const float SpeedMulMin = 0.75f;
+        public const float SpeedMulMax = 1.25f;
+        public const float SpeedMulReturn = 0.012f;
+
+        // --- Жизни ---
+        public const int StartLives = 3;
+        public const int MaxLives = 5;
+        public const float LifeEveryMeters = 500f;
+        public const float InvulnerableTime = 1.5f;
+
         // --- Столкновения (полуразмеры коробки игрока) ---
         public const float PlayerHalfX = 0.52f;
         public const float PlayerHalfY = 1.05f;
@@ -64,6 +77,9 @@ namespace FiveLineRace
         public static readonly Color Lamp = new Color(1f, 0.91f, 0.68f);
         public static readonly Color Tire = new Color(0.06f, 0.06f, 0.09f);
         public static readonly Color Cargo = new Color(0.78f, 0.82f, 0.9f);
+        public static readonly Color ManholeMetal = new Color(0.14f, 0.15f, 0.19f);
+        public static readonly Color ManholeSlow = new Color(0.22f, 0.95f, 0.48f);
+        public static readonly Color ManholeFast = new Color(1f, 0.24f, 0.32f);
 
         public static readonly Color[] TrafficColors =
         {

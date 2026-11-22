@@ -111,5 +111,24 @@ namespace FiveLineRace
 
             return root;
         }
+
+        /// <summary>Круглый люк на дороге: цветное поле с решёткой.</summary>
+        public static GameObject CreateManhole(Transform parent, Color accent)
+        {
+            var root = new GameObject("ManholeVisual");
+            root.transform.SetParent(parent, false);
+
+            G2Quad.Create(root.transform, "Rim", 0f, 0f, 1f, 1f, G2.ManholeMetal, 0f);
+            G2Quad.Create(root.transform, "Face", 0f, 0f, 0.8f, 0.8f, accent, -0.01f);
+            G2Quad.Create(root.transform, "FaceInner", 0f, 0f, 0.6f, 0.6f, G2.Darken(accent, 0.55f), -0.02f);
+
+            for (int i = 0; i < 3; i++)
+            {
+                G2Quad.Create(root.transform, "Slot", 0f, -0.2f + i * 0.2f, 0.46f, 0.06f,
+                    G2.Darken(accent, 0.28f), -0.03f);
+            }
+
+            return root;
+        }
     }
 }

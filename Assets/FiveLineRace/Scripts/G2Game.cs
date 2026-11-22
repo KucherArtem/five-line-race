@@ -20,6 +20,7 @@ namespace FiveLineRace
         public float Distance { get; private set; }
         public int Coins { get; private set; }
         public int Best { get; private set; }
+        public int Lives { get; private set; }
         public int Score { get { return Mathf.FloorToInt(Distance) + Coins * CoinValue; } }
 
         public float ScrollSpeed
@@ -35,11 +36,19 @@ namespace FiveLineRace
 
         readonly List<Mover2D> obstacles = new List<Mover2D>();
         readonly List<GameObject> coins = new List<GameObject>();
+        readonly List<Manhole2D> manholes = new List<Manhole2D>();
 
         float spawnTimer;
         float crashTime;
         float inputUnlockTime;
         float camX;
+
+        // Скорость = разгон * множитель от люков; множитель плавно возвращается к 1.
+        float baseSpeed;
+        float speedMul = 1f;
+
+        float invulnerableUntil;
+        float nextLifeAt;
 
         /// <summary>
         /// Страховка: если в открытой сцене нет Game2Manager, игра всё равно запустится.
@@ -91,6 +100,8 @@ namespace FiveLineRace
 
             ui = UIManager2D.Create();
             ui.SetHud(0, Best, 0, 0f);
+            ui.SetLives(G2.StartLives);
+            ui.ShowLives(false);
             ui.ShowMenu(true);
         }
 
@@ -138,8 +149,21 @@ namespace FiveLineRace
             {
                 float dt = Time.deltaTime;
 
-                Speed = Mathf.MoveTowards(Speed, G2.MaxSpeed, G2.Acceleration * dt);
+                baseSpeed = Mathf.MoveTowards(baseSpeed, G2.MaxSpeed, G2.Acceleration * dt);
+                speedMul = Mathf.MoveTowards(speedMul, 1f, G2.SpeedMulReturn * dt);
+                Speed = baseSpeed * speedMul;
                 Distance += Speed * dt;
+
+                // Каждые 500 м возвращаем по одной жизни, но не больше пяти.
+                if (Distance >= nextLifeAt)
+                {
+                    nextLifeAt += G2.LifeEveryMeters;
+                    if (Lives < G2.MaxLives)
+                    {
+                        Lives++;
+                        ui.SetLives(Lives);
+                    }
+                }
 
                 spawnTimer -= dt;
                 if (spawnTimer <= 0f)
@@ -206,6 +230,7 @@ namespace FiveLineRace
             car.Crash();
             if (shake != null) shake.Shake(0.45f, 0.35f);
             ui.Flash();
+            ui.ShowLives(false);
 
             StartCoroutine(SlowMotion());
             StartCoroutine(ShowCrashLater());
@@ -247,12 +272,19 @@ namespace FiveLineRace
             camX = CameraTarget(0f);
             if (shake != null) shake.BasePosition = new Vector3(camX, 0f, -10f);
             Coins = 0;
+            Lives = G2.StartLives;
+            nextLifeAt = G2.LifeEveryMeters;
+            invulnerableUntil = 0f;
+            baseSpeed = G2.StartSpeed;
+            speedMul = 1f;
             Speed = G2.StartSpeed;
             spawnTimer = 1.1f;
 
             ui.ShowMenu(false);
             ui.ShowCrash(false, 0, Best);
             ui.ResetHud();
+            ui.SetLives(Lives);
+            ui.ShowLives(true);
 
             State = Game2State.Playing;
         }
@@ -270,6 +302,12 @@ namespace FiveLineRace
                 if (coins[i] != null) Destroy(coins[i]);
             }
             coins.Clear();
+
+            for (int i = 0; i < manholes.Count; i++)
+            {
+                if (manholes[i] != null) Destroy(manholes[i].gameObject);
+            }
+            manholes.Clear();
         }
 
         void SpawnRow()
@@ -305,9 +343,22 @@ namespace FiveLineRace
 
             // Монеты в свободной полосе.
             int freeLane = lanes[blocked];
+            int coinLane = -1;
             if (Random.value < 0.55f)
             {
-                SpawnCoins(freeLane);
+                coinLane = freeLane;
+                SpawnCoins(coinLane);
+            }
+
+            // Люк — в другой свободной полосе, чтобы не накрывать монеты.
+            if (Random.value < 0.5f)
+            {
+                for (int i = blocked; i < lanes.Count; i++)
+                {
+                    if (lanes[i] == coinLane) continue;
+                    SpawnManhole(lanes[i], Random.value < 0.5f);
+                    break;
+                }
             }
         }
 
@@ -376,11 +427,33 @@ namespace FiveLineRace
             }
         }
 
+        void SpawnManhole(int lane, bool faster)
+        {
+            var go = new GameObject("Manhole");
+            go.transform.SetParent(worldRoot, false);
+
+            float laneBase = G2.LaneX(lane);
+            float y = G2.SpawnY + Random.Range(-2.5f, 2.5f);
+            go.transform.position = new Vector3(G2Path.XAtY(laneBase, y, Distance), y, 4f);
+
+            G2Visuals.CreateManhole(go.transform, faster ? G2.ManholeFast : G2.ManholeSlow);
+
+            // Люк лежит на асфальте и едет вместе с дорогой, как монета.
+            var mover = go.AddComponent<Mover2D>();
+            mover.baseX = laneBase;
+            mover.relativeSpeed = 1f;
+
+            var manhole = go.AddComponent<Manhole2D>();
+            manhole.faster = faster;
+
+            manholes.Add(manhole);
+        }
+
         void CheckHits()
         {
             Vector3 p = car.transform.position;
 
-            // Столкновения с трафиком.
+            // Столкновения с трафиком: теряем жизнь, но заезд продолжается.
             for (int i = 0; i < obstacles.Count; i++)
             {
                 var obstacle = obstacles[i];
@@ -390,8 +463,27 @@ namespace FiveLineRace
                 if (Mathf.Abs(q.y - p.y) < G2.PlayerHalfY + obstacle.halfY &&
                     Mathf.Abs(q.x - p.x) < G2.PlayerHalfX + obstacle.halfX)
                 {
-                    Crash();
-                    return;
+                    HitObstacle(obstacle);
+                    break;
+                }
+            }
+
+            // Люки: красный прибавляет скорость, зелёный отнимает.
+            for (int i = manholes.Count - 1; i >= 0; i--)
+            {
+                var manhole = manholes[i];
+                if (manhole == null)
+                {
+                    manholes.RemoveAt(i);
+                    continue;
+                }
+
+                Vector3 q = manhole.transform.position;
+                if (Mathf.Abs(q.y - p.y) < 1.05f && Mathf.Abs(q.x - p.x) < 0.95f)
+                {
+                    ApplySpeedChange(manhole.faster);
+                    Destroy(manhole.gameObject);
+                    manholes.RemoveAt(i);
                 }
             }
 
@@ -413,6 +505,55 @@ namespace FiveLineRace
                     coins.RemoveAt(i);
                 }
             }
+        }
+
+        /// <summary>Удар о препятствие: минус жизнь, короткая неуязвимость и мигание.</summary>
+        void HitObstacle(Mover2D obstacle)
+        {
+            if (State != Game2State.Playing) return;
+            if (Time.time < invulnerableUntil) return;
+
+            // Убираем препятствие, чтобы не таранить его повторно.
+            obstacles.Remove(obstacle);
+            if (obstacle != null) Destroy(obstacle.gameObject);
+
+            Lives--;
+            ui.SetLives(Lives);
+            ui.Flash();
+            if (shake != null) shake.Shake(0.28f, 0.24f);
+
+            if (Lives <= 0)
+            {
+                Crash();
+                return;
+            }
+
+            invulnerableUntil = Time.time + G2.InvulnerableTime;
+            StartCoroutine(BlinkCar(G2.InvulnerableTime));
+        }
+
+        IEnumerator BlinkCar(float duration)
+        {
+            float t = 0f;
+
+            while (t < duration)
+            {
+                if (carVisual != null) carVisual.SetActive(!carVisual.activeSelf);
+                t += 0.09f;
+                yield return new WaitForSecondsRealtime(0.09f);
+            }
+
+            if (carVisual != null) carVisual.SetActive(true);
+        }
+
+        void ApplySpeedChange(bool faster)
+        {
+            float factor = faster ? 1f + G2.ManholeSpeedStep : 1f - G2.ManholeSpeedStep;
+
+            speedMul = Mathf.Clamp(speedMul * factor, G2.SpeedMulMin, G2.SpeedMulMax);
+            Speed = baseSpeed * speedMul;
+
+            ui.PulseSpeed(faster);
         }
     }
 }
