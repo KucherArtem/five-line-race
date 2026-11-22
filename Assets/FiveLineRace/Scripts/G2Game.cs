@@ -379,15 +379,15 @@ namespace FiveLineRace
             {
                 G2Visuals.CreateBarrier(go.transform);
                 mover.relativeSpeed = 1f;
-                mover.halfX = 0.88f;
-                mover.halfY = 0.4f;
+                mover.halfX = 0.74f;
+                mover.halfY = 0.36f;
             }
             else if (roll < 0.4f)
             {
                 Color color = G2.TrafficColors[Random.Range(0, G2.TrafficColors.Length)];
                 G2Visuals.CreateTruck(go.transform, color);
                 mover.relativeSpeed = 0.55f;
-                mover.halfX = 0.74f;
+                mover.halfX = 0.68f;
                 mover.halfY = 1.95f;
             }
             else
@@ -395,7 +395,7 @@ namespace FiveLineRace
                 Color color = G2.TrafficColors[Random.Range(0, G2.TrafficColors.Length)];
                 G2Visuals.CreateTrafficCar(go.transform, color);
                 mover.relativeSpeed = 0.75f;
-                mover.halfX = 0.6f;
+                mover.halfX = 0.5f;
                 mover.halfY = 1.15f;
             }
 
@@ -452,6 +452,11 @@ namespace FiveLineRace
         void CheckHits()
         {
             Vector3 p = car.transform.position;
+            float travelled = Distance;
+
+            // X считаем вдоль дороги: на повороте соседняя полоса смещена по мировой X,
+            // и проверка «в лоб» ловила машины из соседних полос.
+            float carLocalX = p.x - G2Path.OffsetAtY(p.y, travelled);
 
             // Столкновения с трафиком: теряем жизнь, но заезд продолжается.
             for (int i = 0; i < obstacles.Count; i++)
@@ -460,8 +465,10 @@ namespace FiveLineRace
                 if (obstacle == null) continue;
 
                 Vector3 q = obstacle.transform.position;
+                float qLocalX = q.x - G2Path.OffsetAtY(q.y, travelled);
+
                 if (Mathf.Abs(q.y - p.y) < G2.PlayerHalfY + obstacle.halfY &&
-                    Mathf.Abs(q.x - p.x) < G2.PlayerHalfX + obstacle.halfX)
+                    Mathf.Abs(qLocalX - carLocalX) < G2.PlayerHalfX + obstacle.halfX)
                 {
                     HitObstacle(obstacle);
                     break;
@@ -479,7 +486,9 @@ namespace FiveLineRace
                 }
 
                 Vector3 q = manhole.transform.position;
-                if (Mathf.Abs(q.y - p.y) < 1.05f && Mathf.Abs(q.x - p.x) < 0.95f)
+                float qLocalX = q.x - G2Path.OffsetAtY(q.y, travelled);
+
+                if (Mathf.Abs(q.y - p.y) < 1.05f && Mathf.Abs(qLocalX - carLocalX) < 0.95f)
                 {
                     ApplySpeedChange(manhole.faster);
                     Destroy(manhole.gameObject);
@@ -498,7 +507,9 @@ namespace FiveLineRace
                 }
 
                 Vector3 q = coin.transform.position;
-                if (Mathf.Abs(q.y - p.y) < 1.25f && Mathf.Abs(q.x - p.x) < 0.8f)
+                float qLocalX = q.x - G2Path.OffsetAtY(q.y, travelled);
+
+                if (Mathf.Abs(q.y - p.y) < 1.25f && Mathf.Abs(qLocalX - carLocalX) < 0.78f)
                 {
                     Coins++;
                     Destroy(coin);

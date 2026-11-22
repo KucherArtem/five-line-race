@@ -60,7 +60,7 @@ namespace FiveLineRace
                     float y = G2.WrapBottom + i * 5.6f + Random.Range(-1.2f, 1.2f);
                     float w = Random.Range(1.8f, 3.2f);
                     float h = Random.Range(3f, 7.5f);
-                    float cx = side * Random.Range(6.5f, 8.0f);
+                    float cx = side * Random.Range(6.95f, 8.45f);
 
                     var building = G2Quad.Create(root.transform, "Building", cx, y, w, h, G2.Building, 6.6f);
                     moving.Add(building.transform);
@@ -86,7 +86,7 @@ namespace FiveLineRace
                 for (int i = 0; i < 4; i++)
                 {
                     float y = G2.WrapBottom + i * 9.5f + 2f;
-                    float x = side * 5.4f;
+                    float x = side * 5.85f;
 
                     var pole = G2Quad.Create(root.transform, "Pole", x, y, 0.1f, 1.1f,
                         new Color(0.16f, 0.17f, 0.24f), 5.2f);

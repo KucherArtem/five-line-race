@@ -10,8 +10,8 @@ namespace FiveLineRace
     {
         // --- Полосы ---
         public const int LaneCount = 5;
-        public const float LaneWidth = 1.55f;
-        public const float RoadHalfWidth = 4.4f;
+        public const float LaneWidth = 1.72f;
+        public const float RoadHalfWidth = 4.85f;
 
         // --- Камера ---
         public const float OrthoSize = 10.6f;
@@ -54,8 +54,8 @@ namespace FiveLineRace
         public const float InvulnerableTime = 1.5f;
 
         // --- Столкновения (полуразмеры коробки игрока) ---
-        public const float PlayerHalfX = 0.52f;
-        public const float PlayerHalfY = 1.05f;
+        public const float PlayerHalfX = 0.46f;
+        public const float PlayerHalfY = 1.02f;
 
         // --- Прокрутка фона ---
         public const float WrapLength = 38f;
