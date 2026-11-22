@@ -107,8 +107,8 @@ namespace FiveLineRace
             MakeText(menu, "Controls", "WINDOWS:  ←   →   ИЛИ   A / D", 30, FaintText, center, center,
                 new Vector2(0f, -520f), new Vector2(1000f, 50f));
 
-            MakeText(menu, "Version", "ПРОТОТИП · 5 ПОЛОС · 0.5", 24, new Color(0.7f, 0.76f, 0.9f, 0.3f), center, center,
-                new Vector2(0f, -700f), new Vector2(600f, 40f));
+            MakeText(menu, "Version", "ПРОТОТИП · 5 ПОЛОС · " + G2Version.Display, 24, new Color(0.7f, 0.76f, 0.9f, 0.3f), center, center,
+                new Vector2(0f, -700f), new Vector2(700f, 40f));
 
             // ---------- Экран аварии ----------
             crashPanel = MakePanel(root, "Crash", new Color(0.05f, 0.01f, 0.05f, 0.72f)).gameObject;

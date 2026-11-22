@@ -62,6 +62,27 @@ build_android.bat
 
 - `Builds/Windows/FiveLineRace.exe`
 - `Builds/Android/FiveLineRace.apk` (IL2CPP, ARM64, debug-подпись)
+- `Builds/Android/FiveLineRace-<версия>-<код>.apk` — копия с версией в имени
+
+## Версии и обновление APK
+
+Версия хранится в одном месте — `Assets/FiveLineRace/Resources/version.txt`:
+
+```
+0.6.0
+6
+```
+
+- первая строка — имя версии (`versionName`), её меняют вручную;
+- вторая строка — код сборки (`versionCode`), он **увеличивается на 1 при каждой сборке**
+  и сразу подставляется в настройки Android;
+- в меню игры снизу показывается текущая версия, например `0.6.0 (6)`.
+
+Благодаря растущему коду новый APK ставится поверх установленного, данные и рекорд
+сохраняются. Важно, чтобы все APK были подписаны одним ключом: сейчас используется
+debug-ключ Unity с этой машины, поэтому обновления работают при сборке здесь же.
+Для переноса сборок на другой компьютер подключите собственный keystore
+(**Project Settings → Player → Publishing Settings**).
 
 ## Структура
 
@@ -69,6 +90,7 @@ build_android.bat
 Assets/Scenes/FiveLineRace.unity     — сцена (камера + объект Game)
 Assets/FiveLineRace/Scripts/         — игровой код
   G2Const.cs                           константы, палитра, пять полос
+  G2Version.cs                         версия из Resources/version.txt
   G2Path.cs                            кривая трассы (повороты)
   G2Ribbon.cs                          гладкие ленты дороги и бортов
   G2Mats.cs                            unlit-материалы (кэш)

@@ -23,6 +23,7 @@ namespace FiveLineRace.EditorTools
         const string MaterialPath = ResourcesDir + "/TurboUnlit.mat";
         const string WindowsBuildPath = "Builds/Windows/FiveLineRace.exe";
         const string AndroidBuildPath = "Builds/Android/FiveLineRace.apk";
+        const string VersionFile = ResourcesDir + "/version.txt";
 
         // ---------------- Меню ----------------
 
@@ -42,6 +43,7 @@ namespace FiveLineRace.EditorTools
             try
             {
                 SetupProject();
+                ApplyVersion(true, out _);
                 BuildWindowsInternal();
                 Exit(0);
             }
@@ -58,7 +60,10 @@ namespace FiveLineRace.EditorTools
             try
             {
                 SetupProject();
+                string version;
+                int code = ApplyVersion(true, out version);
                 BuildAndroidInternal();
+                CopyVersionedApk(version, code);
                 Exit(0);
             }
             catch (Exception e)
@@ -74,8 +79,11 @@ namespace FiveLineRace.EditorTools
             try
             {
                 SetupProject();
+                string version;
+                int code = ApplyVersion(true, out version);
                 BuildWindowsInternal();
                 BuildAndroidInternal();
+                CopyVersionedApk(version, code);
                 Exit(0);
             }
             catch (Exception e)
@@ -118,7 +126,6 @@ namespace FiveLineRace.EditorTools
         {
             PlayerSettings.companyName = "Fallt Games";
             PlayerSettings.productName = "Five Line Race";
-            PlayerSettings.bundleVersion = "0.5.0";
             PlayerSettings.colorSpace = ColorSpace.Linear;
 
             // Портретная ориентация.
@@ -141,9 +148,61 @@ namespace FiveLineRace.EditorTools
             // Android: IL2CPP + ARM64.
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
-            PlayerSettings.Android.bundleVersionCode = 5;
 
             EditorUserBuildSettings.buildAppBundle = false;
+        }
+
+        // ---------------- Версия ----------------
+
+        /// <summary>
+        /// Читает version.txt: первая строка — имя версии, вторая — код сборки.
+        /// </summary>
+        static void ReadVersion(out string versionName, out int versionCode)
+        {
+            versionName = "0.0.0";
+            versionCode = 1;
+
+            if (!File.Exists(VersionFile)) return;
+
+            string[] lines = File.ReadAllLines(VersionFile);
+            if (lines.Length > 0 && lines[0].Trim().Length > 0) versionName = lines[0].Trim();
+            if (lines.Length > 1) int.TryParse(lines[1].Trim(), out versionCode);
+            if (versionCode < 1) versionCode = 1;
+        }
+
+        /// <summary>
+        /// Подставляет версию в настройки игрока. При bumpCode=true код сборки
+        /// увеличивается и сохраняется в version.txt — без этого Android
+        /// не поставит новый APK поверх установленного.
+        /// </summary>
+        static int ApplyVersion(bool bumpCode, out string versionName)
+        {
+            int versionCode;
+            ReadVersion(out versionName, out versionCode);
+
+            if (bumpCode) versionCode++;
+
+            File.WriteAllLines(VersionFile, new[] { versionName, versionCode.ToString() });
+            AssetDatabase.Refresh();
+
+            PlayerSettings.bundleVersion = versionName;
+            PlayerSettings.Android.bundleVersionCode = versionCode;
+
+            Debug.Log(string.Format("[FiveLineRace] Версия {0} (код сборки {1})", versionName, versionCode));
+            return versionCode;
+        }
+
+        /// <summary>Копия APK с версией в имени: FiveLineRace-0.6.0-6.apk.</summary>
+        static void CopyVersionedApk(string versionName, int versionCode)
+        {
+            if (!File.Exists(AndroidBuildPath)) return;
+
+            string folder = Path.GetDirectoryName(AndroidBuildPath);
+            string target = Path.Combine(folder,
+                string.Format("FiveLineRace-{0}-{1}.apk", versionName, versionCode));
+
+            File.Copy(AndroidBuildPath, target, true);
+            Debug.Log("[FiveLineRace] Версионированная копия APK: " + target);
         }
 
         /// <summary>
