@@ -128,6 +128,7 @@ Assets/FiveLineRace/Scripts/         — игровой код
   G2Mover.cs                           движение препятствий, монет и люков
   G2Manhole.cs                         тип люка (ускорение / замедление)
   G2Cars.cs                            каталог машин и выбранная машина
+  G2VehicleArt.cs                      силуэты машин из прямоугольников
   G2Records.cs                         таблица рекордов в PlayerPrefs
   G2Camera.cs                          тряска камеры
   G2UI.cs                              HUD, меню, рекорды, гараж, экран аварии
