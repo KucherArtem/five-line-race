@@ -87,6 +87,7 @@ namespace FiveLineRace
             Best = PlayerPrefs.GetInt(BestKey, 0);
 
             SetupCamera();
+            G2Audio.Init(gameObject);
 
             WorldScroller2D scroller;
             var world = G2World.Build(out scroller);
@@ -152,6 +153,7 @@ namespace FiveLineRace
             if (State == Game2State.Menu)
             {
                 Speed = 0f;
+                G2Audio.SetEngine(0f, false);
 
                 if (!pointerOnButton && !pressConsumed && !ui.OverlayOpen &&
                     Input2D.Confirm && Time.unscaledTime > inputUnlockTime)
@@ -167,6 +169,7 @@ namespace FiveLineRace
                 speedMul = Mathf.MoveTowards(speedMul, 1f, G2.SpeedMulReturn * dt);
                 Speed = baseSpeed * speedMul;
                 Distance += Speed * dt;
+                G2Audio.SetEngine(Mathf.InverseLerp(G2.StartSpeed, G2.MaxSpeed, Speed), true);
 
                 // Каждые 500 м возвращаем по одной жизни, но не больше пяти.
                 if (Distance >= nextLifeAt)
@@ -176,6 +179,7 @@ namespace FiveLineRace
                     {
                         Lives++;
                         ui.SetLives(Lives);
+                        G2Audio.Play(Sfx.Life);
                     }
                 }
 
@@ -193,6 +197,7 @@ namespace FiveLineRace
             {
                 Speed = Mathf.MoveTowards(Speed, 0f, 28f * Time.deltaTime);
                 ui.SetHud(Score, Best, Coins, Speed);
+                G2Audio.SetEngine(0f, false);
 
                 if (!pointerOnButton && !pressConsumed && !ui.OverlayOpen &&
                     Input2D.Confirm && Time.unscaledTime - crashTime > 0.8f)
@@ -246,6 +251,8 @@ namespace FiveLineRace
 
             car.Crash();
             if (shake != null) shake.Shake(0.45f, 0.35f);
+            G2Audio.Play(Sfx.Crash);
+            G2Audio.SetEngine(0f, false);
             ui.Flash();
             ui.ShowLives(false);
 
@@ -303,6 +310,9 @@ namespace FiveLineRace
             ui.ResetHud();
             ui.SetLives(Lives);
             ui.ShowLives(true);
+
+            G2Audio.Play(Sfx.Start);
+            G2Audio.SetEngine(0f, true);
 
             State = Game2State.Playing;
         }
@@ -547,6 +557,7 @@ namespace FiveLineRace
                 if (Mathf.Abs(q.y - p.y) < 1.25f && Mathf.Abs(qLocalX - carLocalX) < 0.78f)
                 {
                     Coins++;
+                    G2Audio.Play(Sfx.Coin);
                     Destroy(coin);
                     coins.RemoveAt(i);
                 }
@@ -574,6 +585,7 @@ namespace FiveLineRace
                 return;
             }
 
+            G2Audio.Play(Sfx.Hit);
             invulnerableUntil = Time.time + G2.InvulnerableTime;
             StartCoroutine(BlinkCar(G2.InvulnerableTime));
         }
@@ -599,6 +611,7 @@ namespace FiveLineRace
             speedMul = Mathf.Clamp(speedMul * factor, G2.SpeedMulMin, G2.SpeedMulMax);
             Speed = baseSpeed * speedMul;
 
+            G2Audio.Play(faster ? Sfx.Boost : Sfx.Slow);
             ui.PulseSpeed(faster);
         }
     }

@@ -40,6 +40,7 @@ namespace FiveLineRace
         Coroutine flashRoutine;
         Coroutine speedPopRoutine;
         int highlightPlace;
+        UiButton soundButton;
 
         const int RecordRows = 8;
 
@@ -47,6 +48,7 @@ namespace FiveLineRace
         {
             public RectTransform rect;
             public System.Action action;
+            public Text label;
         }
 
         readonly List<UiButton> buttons = new List<UiButton>();
@@ -131,11 +133,14 @@ namespace FiveLineRace
             MakeButton(menu, "CarsButton", "МАШИНЫ", new Vector2(-242f, -300f), new Vector2(452f, 112f), OpenCars);
             MakeButton(menu, "RecordsButton", "РЕКОРДЫ", new Vector2(242f, -300f), new Vector2(452f, 112f), OpenRecords);
 
+            soundButton = MakeButton(menu, "SoundButton", SoundLabel(G2Audio.Enabled),
+                new Vector2(0f, -402f), new Vector2(452f, 84f), ToggleSound, 34);
+
             menuPrompt = MakeText(menu, "Prompt", "НАЖМИТЕ, ЧТОБЫ НАЧАТЬ", 56, G2.Cyan, center, center,
-                new Vector2(0f, -445f), new Vector2(1100f, 90f));
+                new Vector2(0f, -505f), new Vector2(1100f, 90f));
 
             MakeText(menu, "Controls", "WINDOWS:  ←   →   ИЛИ   A / D", 30, FaintText, center, center,
-                new Vector2(0f, -540f), new Vector2(1000f, 50f));
+                new Vector2(0f, -600f), new Vector2(1000f, 50f));
 
             MakeText(menu, "Version", "ПРОТОТИП · 5 ПОЛОС · " + G2Version.Display, 24, new Color(0.7f, 0.76f, 0.9f, 0.3f), center, center,
                 new Vector2(0f, -700f), new Vector2(700f, 40f));
@@ -341,6 +346,20 @@ namespace FiveLineRace
             RefreshMenuCarLabel();
         }
 
+        void ToggleSound()
+        {
+            bool enabled = G2Audio.Toggle();
+            if (soundButton != null && soundButton.label != null)
+            {
+                soundButton.label.text = SoundLabel(enabled);
+            }
+        }
+
+        static string SoundLabel(bool enabled)
+        {
+            return enabled ? "ЗВУК: ВКЛ" : "ЗВУК: ВЫКЛ";
+        }
+
         public bool OverlayOpen
         {
             get
@@ -368,6 +387,7 @@ namespace FiveLineRace
                 if (RectTransformUtility.RectangleContainsScreenPoint(button.rect, point, null))
                 {
                     if (button.action != null) button.action();
+                    G2Audio.Play(Sfx.Click);
                     return true;
                 }
             }
@@ -752,7 +772,7 @@ namespace FiveLineRace
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, size);
             AddShadow(text, new Color(0f, 0.35f, 0.5f, 0.6f), new Vector2(0f, -3f));
 
-            var button = new UiButton { rect = rt, action = action };
+            var button = new UiButton { rect = rt, action = action, label = text };
             buttons.Add(button);
             return button;
         }
