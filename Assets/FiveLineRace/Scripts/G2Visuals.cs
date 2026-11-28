@@ -10,12 +10,22 @@ namespace FiveLineRace
     {
         public static GameObject CreatePlayer(Transform parent)
         {
+            return CreatePlayer(parent, G2Cars.All[0]);
+        }
+
+        public static GameObject CreatePlayer(Transform parent, CarSkin skin)
+        {
             var root = new GameObject("PlayerCarVisual");
             root.transform.SetParent(parent, false);
 
-            var body = new Color(1f, 0.33f, 0.12f);
+            var parts = G2VehicleArt.Build(skin);
+            for (int i = 0; i < parts.Count; i++)
+            {
+                VehiclePart part = parts[i];
+                G2Quad.Create(root.transform, "Part" + i, part.X, part.Y,
+                    part.W, part.H, part.Color, -0.004f * i);
+            }
 
-            BuildCar(root.transform, body);
             return root;
         }
 

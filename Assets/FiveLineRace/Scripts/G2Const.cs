@@ -53,10 +53,6 @@ namespace FiveLineRace
         public const float LifeEveryMeters = 500f;
         public const float InvulnerableTime = 1.5f;
 
-        // --- Столкновения (полуразмеры коробки игрока) ---
-        public const float PlayerHalfX = 0.46f;
-        public const float PlayerHalfY = 1.02f;
-
         // --- Прокрутка фона ---
         public const float WrapLength = 38f;
         public const float WrapBottom = -20f;

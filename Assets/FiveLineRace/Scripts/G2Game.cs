@@ -49,6 +49,9 @@ namespace FiveLineRace
 
         float invulnerableUntil;
         float nextLifeAt;
+        int carId;
+        int crashPlace;
+        bool pressConsumed;
 
         /// <summary>
         /// Страховка: если в открытой сцене нет Game2Manager, игра всё равно запустится.
@@ -90,7 +93,8 @@ namespace FiveLineRace
             worldRoot = world.transform;
 
             var carRoot = new GameObject("Player");
-            var visual = G2Visuals.CreatePlayer(carRoot.transform);
+            carId = G2Cars.Selected;
+            var visual = G2Visuals.CreatePlayer(carRoot.transform, G2Cars.All[carId]);
             car = carRoot.AddComponent<PlayerCar2D>();
             car.Init(visual.transform);
 
@@ -136,11 +140,21 @@ namespace FiveLineRace
         {
             Input2D.EnsureTick();
 
+            // Кнопки меню проверяем вручную: EventSystem в проекте не нужен,
+            // весь ввод уже идёт через Input2D.
+            bool pointerOnButton = ui != null && ui.HandlePointer();
+
+            // Нажатие, попавшее в кнопку, не должно запускать заезд,
+            // даже если кнопка закрыла экран и палец ещё не отпущен.
+            if (pointerOnButton) pressConsumed = true;
+            if (Input2D.Released) pressConsumed = false;
+
             if (State == Game2State.Menu)
             {
                 Speed = 0f;
 
-                if (Input2D.Confirm && Time.unscaledTime > inputUnlockTime)
+                if (!pointerOnButton && !pressConsumed && !ui.OverlayOpen &&
+                    Input2D.Confirm && Time.unscaledTime > inputUnlockTime)
                 {
                     StartRun();
                 }
@@ -180,16 +194,17 @@ namespace FiveLineRace
                 Speed = Mathf.MoveTowards(Speed, 0f, 28f * Time.deltaTime);
                 ui.SetHud(Score, Best, Coins, Speed);
 
-                if (Input2D.Confirm && Time.unscaledTime - crashTime > 0.8f)
+                if (!pointerOnButton && !pressConsumed && !ui.OverlayOpen &&
+                    Input2D.Confirm && Time.unscaledTime - crashTime > 0.8f)
                 {
                     StartRun();
                 }
             }
 
-            // Android: системная кнопка «Назад» закрывает приложение.
-            if (Input2D.EscPressed && Application.isMobilePlatform)
+            if (Input2D.EscPressed)
             {
-                Application.Quit();
+                if (ui.OverlayOpen) ui.CloseOverlays();
+                else if (Application.isMobilePlatform) Application.Quit();
             }
 
             FollowCurve();
@@ -227,6 +242,8 @@ namespace FiveLineRace
             PlayerPrefs.SetInt(BestKey, Best);
             PlayerPrefs.Save();
 
+            crashPlace = G2Records.Submit(Score, Mathf.FloorToInt(Distance), Coins);
+
             car.Crash();
             if (shake != null) shake.Shake(0.45f, 0.35f);
             ui.Flash();
@@ -254,7 +271,7 @@ namespace FiveLineRace
             yield return new WaitForSecondsRealtime(0.6f);
             if (State == Game2State.Crashed)
             {
-                ui.ShowCrash(true, Score, Best);
+                ui.ShowCrash(true, Score, Best, crashPlace);
             }
         }
 
@@ -281,12 +298,29 @@ namespace FiveLineRace
             spawnTimer = 1.1f;
 
             ui.ShowMenu(false);
+            ui.CloseOverlays();
             ui.ShowCrash(false, 0, Best);
             ui.ResetHud();
             ui.SetLives(Lives);
             ui.ShowLives(true);
 
             State = Game2State.Playing;
+        }
+
+        /// <summary>Пересобирает машину игрока под выбранную в гараже.</summary>
+        public void ApplySelectedCar()
+        {
+            int id = G2Cars.Selected;
+            if (id == carId && carVisual != null) return;
+
+            carId = id;
+
+            if (carVisual != null) Destroy(carVisual);
+
+            GameObject visual = G2Visuals.CreatePlayer(car.transform, G2Cars.All[id]);
+            carVisual = visual;
+            car.Init(visual.transform);
+            carVisual.SetActive(State == Game2State.Playing);
         }
 
         void ClearSpawned()
@@ -453,6 +487,7 @@ namespace FiveLineRace
         {
             Vector3 p = car.transform.position;
             float travelled = Distance;
+            CarSkin skin = G2Cars.All[carId];
 
             // X считаем вдоль дороги: на повороте соседняя полоса смещена по мировой X,
             // и проверка «в лоб» ловила машины из соседних полос.
@@ -467,8 +502,8 @@ namespace FiveLineRace
                 Vector3 q = obstacle.transform.position;
                 float qLocalX = q.x - G2Path.OffsetAtY(q.y, travelled);
 
-                if (Mathf.Abs(q.y - p.y) < G2.PlayerHalfY + obstacle.halfY &&
-                    Mathf.Abs(qLocalX - carLocalX) < G2.PlayerHalfX + obstacle.halfX)
+                if (Mathf.Abs(q.y - p.y) < skin.HalfY + obstacle.halfY &&
+                    Mathf.Abs(qLocalX - carLocalX) < skin.HalfX + obstacle.halfX)
                 {
                     HitObstacle(obstacle);
                     break;
